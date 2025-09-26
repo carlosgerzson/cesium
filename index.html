@@ -2,255 +2,253 @@
 <html lang="en">
 
 <head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <script src="https://cesium.com/downloads/cesiumjs/releases/1.133/Build/Cesium/Cesium.js"></script>
     <link href="https://cesium.com/downloads/cesiumjs/releases/1.133/Build/Cesium/Widgets/widgets.css" rel="stylesheet">
+    <title>Cesium 3D</title>
     <style type="text/css">
-        /* Cesium container ocupa toda a tela */
-            html, body {
-                height: 100%;
-                width: 100vw;
-                margin: 0;
-                padding: 0;
-                box-sizing: border-box;
-                overflow: hidden;
-            }
-            #cesiumContainer {
-                position: fixed !important;
-                top: 0 !important;
-                left: 0 !important;
-                width: 100vw !important;
-                height: 100vh !important;
-                min-width: 100vw !important;
-                min-height: 100vh !important;
-                max-width: 100vw !important;
-                max-height: 100vh !important;
-                z-index: 1 !important;
-            }
-        /* Infobox e carrossel - layout otimizado */
-        #infobox {
-            position: fixed;
-            top: 16px;
-            right: 16px;
-            width: 350px;
-            max-width: 96vw;
-            max-height: 96vh;
-            background: rgba(255,255,255,0.97);
-            border-radius: 12px;
-            box-shadow: 0 2px 16px rgba(0,0,0,0.18);
-            padding: 12px 10px 12px 10px;
-            z-index: 100;
-            display: none;
-            pointer-events: auto;
-        }
-        #infobox.active {
-            display: block;
-        }
-        #carousel {
+        body,
+        html {
             width: 100%;
-            max-height: 220px;
+            height: 100%;
+            margin: 0;
+            padding: 0;
             overflow: hidden;
-            border-radius: 8px;
-            margin-bottom: 8px;
         }
-        .carousel-img {
-            width: 100%;
-            height: auto;
-            display: block;
-            object-fit: contain;
-            background: #eee;
-        }
-        .carousel-controls {
-            text-align: center;
-            margin-top: 4px;
-        }
-        .carousel-btn {
-            background: #e0e0e0;
-            border: none;
-            border-radius: 50%;
-            width: 28px;
-            height: 28px;
-            margin: 0 4px;
-            font-size: 16px;
-            cursor: pointer;
-            transition: background 0.2s;
-        }
-        .carousel-btn:hover {
-            background: #bdbdbd;
-        }
-        @media (max-width: 900px) {
-            #infobox {
-                display: none !important;
-            }
-            #cesiumContainer {
-                width: 100vw !important;
-                height: 100vh !important;
-                min-width: 100vw !important;
-                min-height: 100vh !important;
-                max-width: 100vw !important;
-                max-height: 100vh !important;
-                position: fixed !important;
-                top: 0 !important;
-                left: 0 !important;
-                z-index: 1 !important;
-            }
-            #cesiumContainer {
-                width: 100vw !important;
-                height: 100vh !important;
-                position: fixed !important;
-                top: 0 !important;
-                left: 0 !important;
-            }
-            #infobox {
-                position: fixed;
-                right: 0;
-                left: 0;
-                top: 0;
-                width: 100vw;
-                min-width: 0;
-                max-width: 100vw;
-                max-height: 96vh;
-                border-radius: 0 0 16px 16px;
-                padding: 6px 2vw 8px 2vw;
-                box-shadow: 0 2px 12px rgba(0,0,0,0.12);
-                z-index: 100;
-                pointer-events: auto;
-            }
-            #carousel {
-                max-height: 38vh;
-                border-radius: 6px;
-            }
-            .carousel-img {
-                max-height: 34vh;
-            }
+
+        #cesiumContainer {
+            width: 100% !important;
+            height: 100% !important;
         }
     </style>
 </head>
 
 <body>
-    <div id="cesiumContainer" style="width:100vw;height:100vh;position:fixed;top:0;left:0;z-index:1;"></div>
-    <div id="infobox" class="active">
-        <div class="infobox-content">
-            <h2>Barão do Rio Branco</h2>
-            <p>Prédio histórico da cidade, palco de eventos marcantes e símbolo da arquitetura local.</p>
-        </div>
-        <div id="carousel">
-            <button class="carousel-btn" id="prevBtn">&#8592;</button>
-            <img id="carouselImg" src="models/barao1.jpg" alt="Foto do prédio" class="carousel-img">
-            <button class="carousel-btn" id="nextBtn">&#8594;</button>
-        </div>
-    </div>
-    <button id="toggle-building" style="position:fixed;top:16px;left:16px;z-index:101;">Toggle Barão</button>
+    <div id="cesiumContainer"></div>
+    <select id="category-selector" style="z-index: 1; position: fixed; top: 5px; left: 5px;">
+        <option value="todos">Todos</option>
+        <option value="historico">Histórico</option>
+        <option value="servicos">Serviços</option>
+        <option value="casas antigas">Casas Antigas</option>
+        <option value="clube">Clube</option>
+        <option value="Café">Café</option>
+        <option value="farmácia">Farmácia</option>
+        <option value="igreja">Igreja</option>
+        <option value="posto gasolina">Posto de Gasolina</option>
+        <option value="Prefeitura Municipal">Prefeitura Municipal</option>
+    </select>
 
     <script type="module">
-    // Carrossel de imagens do infobox
-    window.addEventListener('DOMContentLoaded', () => {
-        const images = [
-            'models/barao1.jpg',
-            'models/barao2.jpg',
-            'models/barao3.jpg'
-        ];
-        let current = 0;
-        const imgEl = document.getElementById('carouselImg');
-        if (imgEl) {
-            document.getElementById('prevBtn').onclick = () => {
-                current = (current - 1 + images.length) % images.length;
-                imgEl.src = images[current];
-            };
-            document.getElementById('nextBtn').onclick = () => {
-                current = (current + 1) % images.length;
-                imgEl.src = images[current];
-            };
-        }
 
-        // Força o Cesium a ocupar toda a tela em dispositivos menores
-        function resizeCesiumFull() {
-            const cesiumContainer = document.getElementById('cesiumContainer');
-            cesiumContainer.style.position = 'fixed';
-            cesiumContainer.style.top = '0';
-            cesiumContainer.style.left = '0';
-            cesiumContainer.style.width = window.innerWidth + 'px';
-            cesiumContainer.style.height = window.innerHeight + 'px';
-            cesiumContainer.style.zIndex = '1';
-        }
-        resizeCesiumFull();
-        window.addEventListener('resize', resizeCesiumFull);
-    });
-        import { buildingsMap } from './buildingsData.js';
-        // Seu token
+    import { buildingsMap } from './buildingsData.js';
+    import { lendas } from './lendasData.js';
+
         Cesium.Ion.defaultAccessToken = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJqdGkiOiI5NmUwYzg1Zi1lMGI3LTQ4ZmYtYTI4MC04ZjQyYmYwY2Y2NjgiLCJpZCI6MTI5NjcwLCJpYXQiOjE3NTc4NjMzNTR9.ktheFtRHsrg2EOCenwduLGJWJyCKVfAD3q64qdlUzt8';
-        console.log('Token configurado:', Cesium.Ion.defaultAccessToken);
 
-        // Função assíncrona para inicializar
+        let viewer;
         async function init() {
             try {
-                // Inicializa o viewer com Cesium World Terrain
-                const viewer = new Cesium.Viewer('cesiumContainer', {
+                // Inicializa o visualizador com terreno
+                viewer = new Cesium.Viewer('cesiumContainer', {
                     terrain: Cesium.Terrain.fromWorldTerrain(),
-                    shadows: true,
-                    terrainShadows: Cesium.ShadowMode.ENABLED,
                     infoBox: false,
                     selectionIndicator: false,
-                    timeline: false,
                     animation: false,
-                    sceneModePicker: false,
+                    timeline: false,
                     baseLayerPicker: false,
-                    geocoder: false,
-                    navigationInstructionsInitiallyVisible: false,
-                    navigationHelpButton: false
                 });
-                console.log('Viewer inicializado com sucesso');
 
-                // Adiciona OSM Buildings
-                const buildingsTileset = await Cesium.createOsmBuildingsAsync();
-                viewer.scene.primitives.add(buildingsTileset);
-                console.log('OSM Buildings adicionados');
+                // Controles da câmera
+                viewer.scene.screenSpaceCameraController.rotateEventTypes = [Cesium.CameraEventType.LEFT_DRAG];
+                viewer.scene.screenSpaceCameraController.zoomEventTypes = [Cesium.CameraEventType.MIDDLE_DRAG, Cesium.CameraEventType.WHEEL, Cesium.CameraEventType.PINCH];
+                viewer.scene.screenSpaceCameraController.panEventTypes = [Cesium.CameraEventType.RIGHT_DRAG];
 
-                                // Mostra todos os prédios por padrão, sem bordas (outline)
-                                                buildingsTileset.style = new Cesium.Cesium3DTileStyle({
-                                                    show: true,
-                                                    color: "color('lightgray', 1)", // cor das faces
-                                                    outlineColor: "color('lightgray', 1)", // borda igual à face
-                                                    outlineWidth: 1// borda padrão, mas cor igual à face
-                                                });
+                // Visão global e depois área de interesse (centro da praça)
+                const pracaCentro = { lon: -54.316822, lat: -30.344800, altura: 600 };
+                viewer.camera.setView({
+                    destination: Cesium.Cartesian3.fromDegrees(pracaCentro.lon, pracaCentro.lat, 20000000),
+                });
+                viewer.camera.flyTo({
+                    destination: Cesium.Cartesian3.fromDegrees(pracaCentro.lon, pracaCentro.lat, pracaCentro.altura),
+                    orientation: {
+                        heading: Cesium.Math.toRadians(0.0),
+                        pitch: Cesium.Math.toRadians(-45.0),
+                        roll: 0.0
+                    },
+                    duration: 3.5,
+                    easingFunction: Cesium.EasingFunction.QUADRATIC_IN_OUT
+                });
 
-                // Importa o mapa de prédios e modelos
-                // Supondo que buildingsMap está disponível globalmente
-                // Se não estiver, importe aqui
-                // import { buildingsMap } from './buildingsData.js';
+                // Adiciona marcadores das lendas
+                const lendaEntities = [];
+                lendas.forEach((lenda, idx) => {
+                    const entity = viewer.entities.add({
+                        position: Cesium.Cartesian3.fromDegrees(lenda.position.lon, lenda.position.lat, 5), // 5 metros acima do solo
+                        billboard: {
+                            image: 'https://cdn-icons-png.flaticon.com/512/684/684908.png',
+                            width: 40,
+                            height: 40,
+                            verticalOrigin: Cesium.VerticalOrigin.BOTTOM,
+                            heightReference: Cesium.HeightReference.RELATIVE_TO_GROUND
+                        },
+                        lendaId: idx
+                    });
+                    lendaEntities.push(entity);
+                });
 
-                // Controle de IDs ocultos e entidades GLB
-                let hiddenIds = [];
-                const glbEntities = {};
-
-                // Função para atualizar o estilo dos prédios OSM
-                function updateOsmStyle() {
-                    if (hiddenIds.length === 0) {
-                        buildingsTileset.style = new Cesium.Cesium3DTileStyle({ show: true });
-                    } else {
-                        // Expressão correta para Cesium3DTileStyle
-                        const expr = hiddenIds.map(id => `\${elementId} === ${id}`).join(' || ');
-                        buildingsTileset.style = new Cesium.Cesium3DTileStyle({
-                            show: {
-                                conditions: [
-                                    [expr, false],
-                                    [true, true]
-                                ]
-                            }
-                        });
+                // Função para mostrar infobox de lenda com carrossel
+                function showLendaInfobox(idx) {
+                    const lenda = lendas[idx];
+                    if (!lenda) return;
+                    let infobox = document.getElementById('infobox-lenda');
+                    if (!infobox) {
+                        infobox = document.createElement('div');
+                        infobox.id = 'infobox-lenda';
+                        infobox.style.position = 'fixed';
+                        infobox.style.top = '60px';
+                        infobox.style.right = '20px';
+                        infobox.style.background = 'rgba(255,255,255,0.97)';
+                        infobox.style.border = '1px solid #888';
+                        infobox.style.padding = '16px';
+                        infobox.style.zIndex = 20;
+                        infobox.style.maxWidth = '350px';
+                        infobox.style.boxShadow = '0 2px 8px #0003';
+                        infobox.style.borderRadius = '8px';
+                        infobox.style.overflowY = 'auto';
+                        document.body.appendChild(infobox);
                     }
-                    viewer.scene.requestRender();
+                    let carousel = '';
+                    if (lenda.images && lenda.images.length > 0) {
+                        carousel = `
+                        <div id="carousel-lenda" style="text-align:center;">
+                            <img id="carousel-img" src="${lenda.images[0]}" style="max-width:95%;max-height:180px;border-radius:6px;" />
+                            <br>
+                            <button id="prev-img">◀</button>
+                            <span id="img-indicator">1/${lenda.images.length}</span>
+                            <button id="next-img">▶</button>
+                        </div>`;
+                    }
+                    infobox.innerHTML = `
+                        <b>${lenda.title}</b><br><br>
+                        <div style='max-height:120px;overflow-y:auto;'>${lenda.description}</div>
+                        <br>
+                        ${carousel}
+                        <br><button id='close-infobox-lenda'>Fechar</button>
+                    `;
+                    infobox.style.display = 'block';
+                    document.getElementById('close-infobox-lenda').onclick = () => {
+                        infobox.style.display = 'none';
+                    };
+                    // Carrossel de imagens
+                    if (lenda.images && lenda.images.length > 1) {
+                        let idxImg = 0;
+                        const imgEl = document.getElementById('carousel-img');
+                        const indicator = document.getElementById('img-indicator');
+                        document.getElementById('prev-img').onclick = () => {
+                            idxImg = (idxImg - 1 + lenda.images.length) % lenda.images.length;
+                            imgEl.src = lenda.images[idxImg];
+                            indicator.textContent = `${idxImg+1}/${lenda.images.length}`;
+                        };
+                        document.getElementById('next-img').onclick = () => {
+                            idxImg = (idxImg + 1) % lenda.images.length;
+                            imgEl.src = lenda.images[idxImg];
+                            indicator.textContent = `${idxImg+1}/${lenda.images.length}`;
+                        };
+                    }
                 }
 
-                // Função para adicionar/remover modelo GLB
-                function toggleGlb(id) {
-                    if (!buildingsMap[id]) return;
+                // Adiciona OSM Buildings tileset
+                const buildingsTileset = await Cesium.createOsmBuildingsAsync();
+                viewer.scene.primitives.add(buildingsTileset);
+                buildingsTileset.style = new Cesium.Cesium3DTileStyle({
+                    show: true,
+                    color: "color('white', 1)"
+                });
+
+                // Evento de clique para mostrar ID e coordenadas do prédio OSM
+                viewer.screenSpaceEventHandler.setInputAction(function (click) {
+                    const pickedObject = viewer.scene.pick(click.position);
+                    if (Cesium.defined(pickedObject) && pickedObject.getProperty) {
+                        const elementId = pickedObject.getProperty('elementId');
+                        if (elementId) {
+                            // Obtém coordenadas do clique
+                            const cartesian = viewer.scene.pickPosition(click.position);
+                            let coords = null;
+                            if (cartesian) {
+                                const cartographic = Cesium.Cartographic.fromCartesian(cartesian);
+                                const lon = Cesium.Math.toDegrees(cartographic.longitude).toFixed(6);
+                                const lat = Cesium.Math.toDegrees(cartographic.latitude).toFixed(6);
+                                const height = cartographic.height.toFixed(2);
+                                coords = { lon, lat, height };
+                            }
+                            console.log('ID do prédio:', elementId, 'Coordenadas:', coords);
+                        }
+                    }
+                }, Cesium.ScreenSpaceEventType.LEFT_CLICK);
+                // Lógica de alternância OSM/GLB
+                let glbEntities = {};
+
+                // Cria/mostra infobox
+                function showInfobox(id) {
+                    const data = buildingsMap[id];
+                    if (!data || !data.info) return;
+                    let infobox = document.getElementById('infobox');
+                    if (!infobox) {
+                        infobox = document.createElement('div');
+                        infobox.id = 'infobox';
+                        infobox.style.position = 'fixed';
+                        infobox.style.top = '20px';
+                        infobox.style.right = '20px';
+                        infobox.style.background = 'rgba(255,255,255,0.95)';
+                        infobox.style.border = '1px solid #888';
+                        infobox.style.padding = '16px';
+                        infobox.style.zIndex = 10;
+                        infobox.style.maxWidth = '320px';
+                        infobox.style.boxShadow = '0 2px 8px #0003';
+                        infobox.style.borderRadius = '8px';
+                        infobox.innerHTML = '';
+                        document.body.appendChild(infobox);
+                    }
+                    infobox.innerHTML = `<b>${data.info.title}</b><br><small>${id}</small><br><br>${data.info.description}<br><br>${data.info.images && data.info.images.length ? `<img src='${data.info.images[0]}' style='max-width:100%;border-radius:6px;'>` : ''}<br><br><button id='close-infobox'>Fechar</button> <button id='close-glb'>Fechar e voltar para OSM</button>`;
+                    document.getElementById('close-infobox').onclick = () => {
+                        infobox.style.display = 'none';
+                    };
+                    document.getElementById('close-glb').onclick = () => {
+                        infobox.style.display = 'none';
+                        if (glbEntities[id]) {
+                            viewer.entities.remove(glbEntities[id]);
+                            glbEntities[id] = null;
+                        }
+                        // Reexibe apenas o OSM deste prédio, mantendo os outros ocultos se ainda houver GLB ativo
+                        const hideIds = Object.keys(glbEntities).filter(key => glbEntities[key]);
+                        const conditions = hideIds.map(hid => [`\${elementId} === ${hid}`, false]);
+                        conditions.push([true, true]);
+                        buildingsTileset.style = new Cesium.Cesium3DTileStyle({
+                            show: { conditions }
+                        });
+                    };
+                    infobox.style.display = 'block';
+                }
+
+                function toggleOsmAndGlb(id) {
+                    // Oculta OSM apenas do prédio clicado, mantendo os outros como estão
+                    // Monta condições para ocultar todos os prédios que já têm GLB ativo
+                    const hideIds = Object.keys(glbEntities).filter(key => glbEntities[key]).concat(id);
+                    const conditions = hideIds.map(hid => [`\${elementId} === ${hid}`, false]);
+                    conditions.push([true, true]);
+                    buildingsTileset.style = new Cesium.Cesium3DTileStyle({
+                        show: { conditions }
+                    });
+                    // Permite múltiplos GLBs abertos, cada um substitui seu OSM
                     if (glbEntities[id]) {
                         viewer.entities.remove(glbEntities[id]);
                         glbEntities[id] = null;
-                    } else {
-                        const data = buildingsMap[id];
+                    }
+                    const data = buildingsMap[id];
+                    if (data) {
                         glbEntities[id] = viewer.entities.add({
-                            id: id, // Garante que o id do GLB seja igual ao ID OSM
+                            id: id,
                             position: data.position,
                             orientation: Cesium.Transforms.headingPitchRollQuaternion(
                                 data.position,
@@ -258,7 +256,7 @@
                             ),
                             model: {
                                 uri: data.uri_detail,
-                                minimumPixelSize: 128,
+                                //minimumPixelSize: 64,
                                 maximumScale: 20000,
                                 heightReference: Cesium.HeightReference.CLAMP_TO_GROUND,
                                 shadows: Cesium.ShadowMode.ENABLED
@@ -267,98 +265,30 @@
                     }
                 }
 
-                // Configura sombras e iluminação
-                const shadowMap = viewer.shadowMap;
-                shadowMap.maximumDistance = 15000.0;
-                shadowMap.size = 2048;
-                viewer.scene.globe.enableLighting = true;
-                viewer.scene.light = new Cesium.SunLight();
-
-                // Coordenadas da Praça Fernando Abbott (centro inicial)
-                const centerLongitude = -54.316132;
-                const centerLatitude = -30.341385;
-
-                // Fly to the new location
-                viewer.camera.flyTo({
-                    destination: Cesium.Cartesian3.fromDegrees(centerLongitude, centerLatitude, 500),
-                    orientation: {
-                        heading: Cesium.Math.toRadians(0.0),
-                        pitch: Cesium.Math.toRadians(-45.0),
-                        roll: 0.0
-                    },
-                    duration: 3.0,
-                    complete: () => {
-                        console.log('FlyTo concluído, posição:', viewer.camera.positionCartographic);
-                        viewer.scene.requestRender();
-                    }
-                });
-
-                // Limita zoom
-                viewer.scene.camera.moveEnd.addEventListener(() => {
-                    const cartographic = Cesium.Cartographic.fromCartesian(viewer.camera.position);
-                    const height = cartographic.height;
-                    if (height > 500) {
-                        viewer.camera.flyTo({
-                            destination: Cesium.Cartesian3.fromDegrees(centerLongitude, centerLatitude, 500),
-                            duration: 0.5
-                        });
-                        console.log('Zoom out limitado a 500m');
-                    }
-                });
-                viewer.scene.screenSpaceCameraController.minimumZoomDistance = 50;
-                viewer.scene.screenSpaceCameraController.maximumZoomDistance = 500;
-
-                // Toggle button para o Barão (ID 505354016)
-                document.querySelector('#toggle-building').onclick = function () {
-                    const id = '505354016';
-                    if (hiddenIds.includes(id)) {
-                        hiddenIds = hiddenIds.filter(i => i !== id);
-                    } else {
-                        hiddenIds.push(id);
-                    }
-                    updateOsmStyle();
-                    toggleGlb(id);
-                };
-
-                // Evento de clique para alternar prédio OSM/modelo GLB
                 viewer.screenSpaceEventHandler.setInputAction(function (click) {
                     const pickedObject = viewer.scene.pick(click.position);
-                    // Alterna GLB/OSM para todos os IDs do buildingsMap
                     if (Cesium.defined(pickedObject)) {
-                        if (Cesium.defined(pickedObject.primitive) && pickedObject.primitive === buildingsTileset) {
-                            console.log('Clique em prédio OSM');
-                            const elementId = pickedObject.getProperty && pickedObject.getProperty('elementId');
-                            // Loga diretamente o valor de elementId, id, name
-                            console.log('elementId:', elementId);
-                            if (pickedObject.getPropertyNames) {
-                                const propertyNames = pickedObject.getPropertyNames();
-                                const allProps = {};
-                                propertyNames.forEach(p => {
-                                    allProps[p] = pickedObject.getProperty(p);
-                                });
-                                console.log('Propriedades do prédio OSM:', allProps);
-                            } else {
-                                // Tenta logar outras propriedades comuns
-                                console.log('id:', pickedObject.id);
-                                console.log('name:', pickedObject.name);
-                            }
+                        // Clique em marcador de lenda
+                        if (pickedObject.id && pickedObject.id.lendaId !== undefined) {
+                            showLendaInfobox(pickedObject.id.lendaId);
+                            return;
+                        }
+                        // Clique em OSM
+                        if (pickedObject.getProperty) {
+                            const elementId = pickedObject.getProperty('elementId');
                             if (elementId && buildingsMap[elementId]) {
-                                if (!hiddenIds.includes(elementId)) {
-                                    hiddenIds.push(elementId);
-                                    updateOsmStyle();
-                                    toggleGlb(elementId);
-                                }
+                                toggleOsmAndGlb(elementId);
+                                return;
                             }
-                        } else if (pickedObject.id && glbEntities[pickedObject.id.id]) {
-                            console.log('Clique em GLB');
-                            const glbId = pickedObject.id.id;
-                            if (hiddenIds.includes(glbId)) {
-                                hiddenIds = hiddenIds.filter(i => i !== glbId);
-                                updateOsmStyle();
-                                toggleGlb(glbId);
-                            }
-                        } else {
-                            console.log('Clique em outro objeto ou nada selecionado');
+                        }
+                        // Clique em GLB
+                        if (pickedObject.id && buildingsMap[pickedObject.id.id]) {
+                            const id = pickedObject.id.id;
+                            showInfobox(id);
+                            // Marca para qual id está aberto
+                            let infobox = document.getElementById('infobox');
+                            if (infobox) infobox.dataset.forId = id;
+                            return;
                         }
                     }
                 }, Cesium.ScreenSpaceEventType.LEFT_CLICK);
@@ -368,7 +298,6 @@
             }
         }
 
-        // Chama a função inicial
         init();
     </script>
 </body>
